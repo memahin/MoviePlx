@@ -1,5 +1,6 @@
 package com.mahin.movieplx.movieList.data.remote
 
+import com.mahin.movieplx.movieList.data.remote.respond.MovieListDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -11,9 +12,7 @@ interface MovieApi {
         @Path("category") category: String,
         @Query("page") page: Int,
         @Query("api-key") apiKey: String = API_KEY
-
-
-    )
+    ): MovieListDto
 
     companion object {
         const val BASE_URL = "https://api.themoviedb.org/3/"
