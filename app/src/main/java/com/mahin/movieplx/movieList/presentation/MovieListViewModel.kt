@@ -8,13 +8,14 @@ import com.mahin.movieplx.movieList.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MovieListViewModel @Inject constructor(
-    private val movieListViewModel: MovieListViewModel
+    private val movieListRepository: MovieListRepository
 ): ViewModel() {
     private var _movieListState = MutableStateFlow(MovieListState())
     val movieListState = _movieListState.asStateFlow()
@@ -27,30 +28,22 @@ class MovieListViewModel @Inject constructor(
     fun onEvent(event: MovieListUiEvent) {
         when (event) {
             MovieListUiEvent.Navigate -> {
-                _movieListState.update {
-                    it.copy(
-                        isCurrentPopularScreen = !movieListState.value.isCurrentPopularScreen
-                    )
-                }
+                _movieListState.update { it.copy(isCurrentPopularScreen = !it.isCurrentPopularScreen) }
             }
 
             is MovieListUiEvent.Paginate -> {
-                if (event.category == Category.POPULAR) {
-                    getPopularMovieList(true)
-                } else if (event.category == Category.UPCOMING) {
-                    getUpcomingMovieList(true)
+                when (event.category) {
+                    Category.POPULAR -> getPopularMovieList(true)
+                    Category.UPCOMING -> getUpcomingMovieList(true)
                 }
             }
         }
     }
 
-    val movieListRepository = MovieListRepository
-
     private fun getPopularMovieList(forceFetchFromRemote: Boolean) {
         viewModelScope.launch {
-            _movieListState.update {
-                it.copy(isLoading = true)
-            }
+            // Set loading state once at the beginning
+            _movieListState.update { it.copy(isLoading = true) }
 
             movieListRepository.getMovieList(
                 forceFetchFromRemote,
@@ -59,27 +52,24 @@ class MovieListViewModel @Inject constructor(
             ).collectLatest { result ->
                 when (result) {
                     is Resource.Error -> {
-                        _movieListState.update {
-                            it.copy(isLoading = false)
-                        }
+                        _movieListState.update { it.copy(isLoading = false) }
+                        // Optionally log the error or set an error message
                     }
 
                     is Resource.Success -> {
                         result.data?.let { popularList ->
                             _movieListState.update {
                                 it.copy(
-                                    popularMovieList = movieListState.value.popularMovieList
-                                            + popularList.shuffled(),
-                                    popularMovieListPage = movieListState.value.popularMovieListPage + 1
+                                    popularMovieList = it.popularMovieList + popularList,
+                                    popularMovieListPage = it.popularMovieListPage + 1,
+                                    isLoading = false // Set loading to false after success
                                 )
                             }
                         }
                     }
 
                     is Resource.Loading -> {
-                        _movieListState.update {
-                            it.copy(isLoading = result.isLoading)
-                        }
+                        // You can decide to handle this state differently
                     }
                 }
             }
@@ -88,9 +78,7 @@ class MovieListViewModel @Inject constructor(
 
     private fun getUpcomingMovieList(forceFetchFromRemote: Boolean) {
         viewModelScope.launch {
-            _movieListState.update {
-                it.copy(isLoading = true)
-            }
+            _movieListState.update { it.copy(isLoading = true) }
 
             movieListRepository.getMovieList(
                 forceFetchFromRemote,
@@ -99,27 +87,24 @@ class MovieListViewModel @Inject constructor(
             ).collectLatest { result ->
                 when (result) {
                     is Resource.Error -> {
-                        _movieListState.update {
-                            it.copy(isLoading = false)
-                        }
+                        _movieListState.update { it.copy(isLoading = false) }
+                        // Handle error if needed
                     }
 
                     is Resource.Success -> {
                         result.data?.let { upcomingList ->
                             _movieListState.update {
                                 it.copy(
-                                    upcomingMovieList = movieListState.value.upcomingMovieList
-                                            + upcomingList.shuffled(),
-                                    upcomingMovieListPage = movieListState.value.upcomingMovieListPage + 1
+                                    upcomingMovieList = it.upcomingMovieList + upcomingList,
+                                    upcomingMovieListPage = it.upcomingMovieListPage + 1,
+                                    isLoading = false // Set loading to false after success
                                 )
                             }
                         }
                     }
 
                     is Resource.Loading -> {
-                        _movieListState.update {
-                            it.copy(isLoading = result.isLoading)
-                        }
+                        // Handle loading state if needed
                     }
                 }
             }
