@@ -94,7 +94,6 @@ class MovieListRepositoryImpl @Inject constructor(
 
             emit(Resource.Loading(false))
 
-
         }
     }
 }

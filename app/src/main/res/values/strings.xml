@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MoviePlx</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="populer">Populer</string>
+    <string name="popular_movies">Popular Movie</string>
+    <string name="upcoming_movies">Upcoming Movie</string>
 </resources>
